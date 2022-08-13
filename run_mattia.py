@@ -29,6 +29,7 @@ irr15min = irr.resample('15Min').mean()
 
 conf = load_config('mattia')
 config,pvbatt_param,econ_param,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['housetype'],conf['N']
+housetype['EV']['loadshift'] = False
 
 procebinp = {
              'Aglazed': 21.0,
@@ -58,28 +59,37 @@ for i in range(len(isolation)):
         members = memberslist[j]
 
         out = compute_demand(housetype,N,members= members,thermal_parameters=procebinp)
+        
+        # Occupancy
         occ = out['occupancy'][0]
         occupancy_10min = (occ==1).sum(axis=1) # when occupancy==1, the person is in the house and not sleeping
         occupancy_10min = (occupancy_10min>0)  # if there is at least one person awake in the house
         occupancy_15min = occupancy_10min.reindex(index15min,method='nearest')
         
+        # Domestic hot water consumption
+        water = out['results'][0]['mDHW']
+        water_15min = water.resample('15Min').sum()
+        water_15min = water_15min.iloc[:-1]
+        
+        
+        # House heating
         housetype['HP'] = {**housetype['HP'],**procebinp}
-        
         Tset_ref = np.full(n15min,defaults.T_sp_low) + np.full(n15min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_15min
-        
         housetype['HP']['HeatPumpThermalPower'] = None
-        fracmaxP = 0.8
-        QheatHP = HPSizing(housetype,fracmaxP)
-        
-        
+        # fracmaxP = 0.8
+        # QheatHP = HPSizing(housetype,fracmaxP)
+        QheatHP = 100000 # W
         Qintgains = out['results'][0]['InternalGains']
         Qintgains = Qintgains.resample('15Min').mean() 
         res = HouseHeating(housetype,QheatHP,Tset_ref,Qintgains,temp15min,irr15min,n15min,heatseas_st,heatseas_end,ts15min)
         Qheat = res['Qheat']
         
+        # Creating dataframe with results
         res = pd.DataFrame(data=Qheat,index=index15min,columns=['heat'])
-        res['occupancy']=occupancy_15min
+        res['occupancy'] = occupancy_15min
+        res['water'] = water_15min
         
+        # Saving results
         namecsv = '\\isolation_'+str(i+1)+'_members_'+str(j+1)+'.csv'
         outpath = __location__ +'\\resmattia'+ namecsv
         res.to_csv(outpath)

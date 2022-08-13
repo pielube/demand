@@ -141,7 +141,7 @@ def compute_demand(inputs,N,members= None,thermal_parameters=None):
         index_10min = pd.date_range(start='2015-01-01 00:00', periods=len(result['occupancy'][n_scen][0]), freq='10min')
         
         # Dataframe of demands
-        df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','HeatPumpPower2','EVCharging','InternalGains'],dtype=object)
+        df = pd.DataFrame(index=index,columns=['StaticLoad','TumbleDryer','DishWasher','WashingMachine','DomesticHotWater','HeatPumpPower','HeatPumpPower2','EVCharging','InternalGains','mDHW'],dtype=object)
         
         res_ramp_charge_home.loc[df.index[-1],'EVCharging']=0
         
