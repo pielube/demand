@@ -18,16 +18,16 @@ index15min = pd.date_range(start='2015-01-01',end='2015-12-31 23:59:00',freq='15
 n15min = len(index15min)
 ts15min = 1/4
 
-heatseas_st = 305
-heatseas_end = 105
+heatseas_st = 305 # start heating season
+heatseas_end = 105 # end heating season
 
-temp, irr = load_climate_data()
-temp = pd.Series(data=temp[:-1],index=index1min)
-temp15min = temp.resample('15Min').mean()
-irr = pd.Series(data=irr[:-1],index=index1min)
-irr15min = irr.resample('15Min').mean()
+temp, irr = load_climate_data() # load climate data
+temp = pd.Series(data=temp[:-1],index=index1min) # drop last element
+temp15min = temp.resample('15Min').mean() # timestep 15 min
+irr = pd.Series(data=irr[:-1],index=index1min) # drop last element
+irr15min = irr.resample('15Min').mean() # timestep 15 min
 
-conf = load_config('mattia')
+conf = load_config('mattia') # load configuration to be simulated
 config,pvbatt_param,econ_param,housetype,N = conf['config'],conf['pvbatt_param'],conf['econ_param'],conf['housetype'],conf['N']
 housetype['EV']['loadshift'] = False
 
@@ -47,11 +47,11 @@ procebinp = {
 
 members = ['FTE']
 
-isolation = [0.2,0.4,0.6,0.8,1]
-memberslist = [['FTE'],['Retired'],['FTE','FTE'],['Retired','Retired'],['FTE','PTE','U12'],['FTE','PTE','School'],['FTE','PTE','School','U12'],['FTE','PTE','School','School','U12']]
+# isolation = [0.2,0.4,0.6,0.8,1]
+# memberslist = [['FTE'],['Retired'],['FTE','FTE'],['Retired','Retired'],['FTE','PTE','U12'],['FTE','PTE','School'],['FTE','PTE','School','U12'],['FTE','PTE','School','School','U12']]
 
-# isolation = [0.2]
-# memberslist = [['FTE']]
+isolation = [0.2]
+memberslist = [['FTE','PTE']]
 
 for i in range(len(isolation)):
     procebinp['Uwalls'] = isolation[i]
@@ -70,8 +70,7 @@ for i in range(len(isolation)):
         water = out['results'][0]['mDHW']
         water_15min = water.resample('15Min').sum()
         water_15min = water_15min.iloc[:-1]
-        
-        
+          
         # House heating
         housetype['HP'] = {**housetype['HP'],**procebinp}
         Tset_ref = np.full(n15min,defaults.T_sp_low) + np.full(n15min,defaults.T_sp_occ-defaults.T_sp_low) * occupancy_15min
@@ -94,6 +93,17 @@ for i in range(len(isolation)):
         outpath = __location__ +'\\resmattia'+ namecsv
         res.to_csv(outpath)
   
+
+
+
+day ='2015-01-03'
+ax = res['heat'].loc[day].plot()
+ax1 = ax.twinx()
+ax1 = res['water'].loc[day].plot(color='orange')
+
+
+
+
 
 
 
